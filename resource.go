@@ -7,7 +7,7 @@ type Resource struct {
 }
 
 func (r *Resource) Route(path string) *Call {
-	c := &Call{path: path}
+	c := &Call{path: path, operationName: path}
 	r.calls = append(r.calls, c)
 	return c
 }
