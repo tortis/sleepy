@@ -1,30 +1,36 @@
 package sleepy
 
-import "github.com/gorilla/mux"
+import "net/http"
 
 type API struct {
+	basePath  string
 	resources []*Resource
-	router    *mux.Router
+	router    *http.ServeMux
 }
 
-func New() *API {
+func New(basePath string) *API {
 	return &API{
 		resources: make([]*Resource, 0),
-		router:    mux.NewRouter(),
+		router:    http.NewServeMux(),
+		basePath:  basePath,
 	}
 }
 
-func (api *API) GetRouter() *mux.Router {
-	return api.router
+// Implement http Handler interface
+func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	api.router.ServeHTTP(w, r)
 }
 
 // All of the resources calls need to be added to the router
 func (api *API) Register(r *Resource) {
-	// Add the resource to our local list
+	// Add the resource to our list
 	api.resource = append(api.resources, r)
-
-	// Attach handler for each call
-	for _, call := range r.calls {
-
-	}
+	// Create a new route with the resource path
+	resourceRoute := api.router.PathPrefix(basePath + r.path)
+	// Create a sub router on this route
+	resourceRouter := resourceRoute.Subrouter()
+	// Let the resource attach its handlers to the subrouter
+	r.construct(resourceRouter)
+	// Let the resource handle the route
+	resourceRoute.Handler(r)
 }

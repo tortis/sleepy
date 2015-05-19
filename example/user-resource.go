@@ -1,6 +1,6 @@
 package main
 
-import "../sleeyp"
+import "../sleepy"
 
 type User struct {
 	Id        string `bson:"_id" sleepy:"readonly"`
@@ -32,10 +32,11 @@ func (u *UserResource) Generate() *Resource {
 	return res
 }
 
-func (u *UserResource) getUser(resp Response, req *Request) {
+func (u *UserResource) getUser(resp Response, req *Request) (interface{}, Error) {
 
 }
 
-func (u *UserResource) createUser(resp Response, req *Requeset) {
+func (u *UserResource) createUser(resp Response, req *Requeset) (interface{}, Error) {
+	newUser := req.Data.(User)
 
 }

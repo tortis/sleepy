@@ -1,3 +1,5 @@
 package sleepy
 
-type Filter func(Response, *Request)
+import "net/http"
+
+type Filter func(http.ResponseWriter, *http.Request) error

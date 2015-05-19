@@ -9,6 +9,22 @@ type Call struct {
 	model         callDataModel
 }
 
+// Implement the Handler interface.
+func (c *Call) ServeHTTP(http.ResponseWriter, *http.Request) {
+	// Create a sleepy request + response
+
+	// Check headers (make sure method mathes the call method)
+
+	// Parse url/path variables and store them in the *sleepy.Request
+
+	// Parse the request body into the reads model if applicable
+	// and validate that required fields are present
+
+	// Call filters
+
+	// Call handler
+}
+
 type callDataModel struct {
 	bodyIn    interface{}
 	bodyOut   interface{}
