@@ -1,7 +1,6 @@
 package sleepy
 
 import (
-	"net/http"
 	"reflect"
 	"strings"
 )
@@ -27,12 +26,12 @@ type DataOut struct {
 
 func (dm *DataIn) isRequired(field string) bool {
 	// Only consider struct fields
-	t := reflect.TypeOf(dm.body)
+	t := reflect.TypeOf(dm.Body)
 	if t.Kind() != reflect.Struct {
 		return false
 	}
 	if f, e := t.FieldByName(field); e {
-		tag := f.StructTag.Get("sleepy")
+		tag := f.Tag.Get("sleepy")
 		props := strings.Split(tag, ",")
 		for i := 0; i < len(props); i++ {
 			if props[i] == "required" {

@@ -1,5 +1,10 @@
 package sleepy
 
+import (
+	"log"
+	"net/http"
+)
+
 type Call struct {
 	path          string
 	method        string
@@ -10,7 +15,7 @@ type Call struct {
 }
 
 // Implement the Handler interface.
-func (c *Call) ServeHTTP(http.ResponseWriter, *http.Request) {
+func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create a sleepy request + response
 
 	// Check headers (make sure method mathes the call method)
@@ -21,8 +26,17 @@ func (c *Call) ServeHTTP(http.ResponseWriter, *http.Request) {
 	// and validate that required fields are present
 
 	// Call filters
+	for _, filter := range c.filters {
+		err := filter(w, r)
+		if err != nil {
+			log.Println("Call Filter Error: ", err)
+			// Fail here and stop handling the request
+		}
+	}
 
 	// Call handler
+	c.handler(w, r)
+	// End of the line (request has been fully handled)
 }
 
 type callDataModel struct {
@@ -78,5 +92,3 @@ func (c *Call) OperationName(name string) *Call {
 	c.operationName = name
 	return c
 }
-
-// -- Example data model

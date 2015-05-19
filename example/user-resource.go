@@ -1,6 +1,11 @@
 package main
 
-import "../sleepy"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/tortis/sleepy"
+)
 
 type User struct {
 	Id        string `bson:"_id" sleepy:"readonly"`
@@ -14,8 +19,8 @@ type UserResource struct {
 	dbs int
 }
 
-func (u *UserResource) Generate() *Resource {
-	res := new(Resource)
+func (u *UserResource) Generate() *sleepy.Resource {
+	res := sleepy.NewResource("/users")
 	res.Route("/{uid}").
 		Method("GET").
 		To(u.getUser).
@@ -32,11 +37,12 @@ func (u *UserResource) Generate() *Resource {
 	return res
 }
 
-func (u *UserResource) getUser(resp Response, req *Request) (interface{}, Error) {
-
+func (u *UserResource) getUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "getUser!")
 }
 
-func (u *UserResource) createUser(resp Response, req *Requeset) (interface{}, Error) {
-	newUser := req.Data.(User)
+func (u *UserResource) createUser(w http.ResponseWriter, r *http.Request) {
+	//newUser := req.Data.(User)
 
+	fmt.Fprintf(w, "createUser!")
 }
