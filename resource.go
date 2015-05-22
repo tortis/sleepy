@@ -16,7 +16,7 @@ type Resource struct {
 }
 
 func NewResource(path string) *Resource {
-	return &Resource{path: path}
+	return &Resource{path: path, router: mux.NewRouter()}
 }
 
 func (r *Resource) Route(path string) *Call {
@@ -38,14 +38,15 @@ func (res *Resource) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Fail here and stop handling the request
 		}
 	}
+
+	// Route to the appropriate call handler
 	res.router.ServeHTTP(w, r)
 }
 
 // Give the resource a subrouter for its base path so that it can attach its
 // call handlers to their respective paths.
-func (r *Resource) construct(router *mux.Router) {
-	r.router = router
+func (r *Resource) construct(pathPrefix string) {
 	for _, call := range r.calls {
-		r.router.Handle(call.path, call).Methods(call.method)
+		r.router.Handle(pathPrefix+r.path+call.path, call).Methods(call.method)
 	}
 }

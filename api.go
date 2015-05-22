@@ -7,17 +7,20 @@ import (
 )
 
 type API struct {
-	basePath  string
-	resources []*Resource
-	router    *mux.Router
+	basePath       string
+	resources      []*Resource
+	router         *mux.Router
+	resourceRouter *mux.Router
 }
 
 func New(basePath string) *API {
-	return &API{
+	api := &API{
 		resources: make([]*Resource, 0),
 		router:    mux.NewRouter(),
 		basePath:  basePath,
 	}
+	api.resourceRouter = api.router.PathPrefix(basePath).Subrouter()
+	return api
 }
 
 // Implement http Handler interface
@@ -29,12 +32,6 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (api *API) Register(r *Resource) {
 	// Add the resource to our list
 	api.resources = append(api.resources, r)
-	// Create a new route with the resource path
-	resourceRoute := api.router.PathPrefix(api.basePath + r.path)
-	// Create a sub router on this route
-	resourceRouter := resourceRoute.Subrouter()
-	// Let the resource attach its handlers to the subrouter
-	r.construct(resourceRouter)
-	// Let the resource handle the route
-	resourceRoute.Handler(r)
+	r.construct(api.basePath)
+	api.resourceRouter.PathPrefix(r.path).Handler(r)
 }
