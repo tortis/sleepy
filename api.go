@@ -8,13 +8,7 @@ import (
 )
 
 ////////////////////////////////////////////////////////////////////////////////
-// A place to store arbitary data while the request is bounding between       //
-// different calls and handlers.                                              //
-////////////////////////////////////////////////////////////////////////////////
-type CallData map[string]interface{}
-
-////////////////////////////////////////////////////////////////////////////////
-// Then end handler function that will service an API call.                   //
+// A handler function that can service an API call.                           //
 ////////////////////////////////////////////////////////////////////////////////
 type Handler func(http.ResponseWriter, *http.Request, CallData) (interface{}, Error)
 
@@ -25,6 +19,12 @@ type Handler func(http.ResponseWriter, *http.Request, CallData) (interface{}, Er
 // should write data to CallData and return an Error if appropriate.          //
 ////////////////////////////////////////////////////////////////////////////////
 type Filter func(http.ResponseWriter, *http.Request, CallData) Error
+
+////////////////////////////////////////////////////////////////////////////////
+// A place to store arbitary data while the request is bounding between       //
+// different calls and handlers.                                              //
+////////////////////////////////////////////////////////////////////////////////
+type CallData map[string]interface{}
 
 type API struct {
 	basePath       string
@@ -89,8 +89,8 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Should always be called before response handling ends
 func logResult(r *http.Request, e Error) {
 	if e == nil {
-		fmt.Printf("[200]  [client %s]->[%s %s]  OK\n", r.RemoteAddr, r.URL)
+		fmt.Printf("[200]  [client %s]->[%s %s]  OK\n", r.RemoteAddr, r.Method, r.URL)
 	} else {
-		fmt.Printf("[%d]  [client %s]->[%s %s] %s: %s\n", e.StatusCode(), r.RemoteAddr, r.URL, e.Message(), e.Error())
+		fmt.Printf("[%d]  [client %s]->[%s %s] %s: %s\n", e.StatusCode(), r.RemoteAddr, r.Method, r.URL, e.Message(), e.Error())
 	}
 }

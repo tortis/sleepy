@@ -6,6 +6,13 @@ import (
 	"github.com/tortis/sleepy/mux"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+// Representation of of a RESTful resource with the API. It is recommneded    //
+// that you create a struct that represents your REST resource, and add the   //
+// handler functions as methods. Then write a Generate method which will make //
+// a call to NewResource() and build all of the calls for the resource and    //
+// finally return the new resource											  //
+////////////////////////////////////////////////////////////////////////////////
 type Resource struct {
 	path    string
 	name    string
@@ -14,6 +21,11 @@ type Resource struct {
 	router  *mux.Router
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Create a new resource at the provided path. After creating a new resource, //
+// Attach calls using Route. Once all the calls are attached pass the         //
+// resource                                                                   //
+////////////////////////////////////////////////////////////////////////////////
 func NewResource(path string) *Resource {
 	return &Resource{path: path, router: mux.NewRouter()}
 }

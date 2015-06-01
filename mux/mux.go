@@ -88,6 +88,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request, d map[strin
 	}
 	if handler == nil {
 		handler = r.NotFoundHandler
+		if handler == nil {
+			handler = sleepyHandlerFunc(func(w http.ResponseWriter, r *http.Request, d map[string]interface{}) {
+				http.NotFoundHandler().ServeHTTP(w, r)
+			})
+		}
 	}
 	if !r.KeepContext {
 		defer context.Clear(req)

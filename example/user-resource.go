@@ -21,7 +21,6 @@ type UserResource struct {
 
 func (u *UserResource) Generate() *sleepy.Resource {
 	res := sleepy.NewResource("/users")
-	res.Filter(hasAuthFilter)
 	res.Route("/{uid}").
 		Method("GET").
 		To(u.getUser).
@@ -32,6 +31,7 @@ func (u *UserResource) Generate() *sleepy.Resource {
 	res.Route("").
 		Method("POST").
 		To(u.createUser).
+		Filter(hasAuthFilter).
 		OperationName("createUser").
 		Reads(User{}).
 		Returns(User{})
@@ -39,7 +39,7 @@ func (u *UserResource) Generate() *sleepy.Resource {
 }
 
 func (u *UserResource) getUser(w http.ResponseWriter, r *http.Request, d sleepy.CallData) (interface{}, sleepy.Error) {
-	return fmt.Sprintf("getUser! - %s", d["auth"].(string)), nil
+	return fmt.Sprintf("getUser! - %s", "asdf"), nil
 }
 
 func (u *UserResource) createUser(w http.ResponseWriter, r *http.Request, d sleepy.CallData) (interface{}, sleepy.Error) {
@@ -48,7 +48,6 @@ func (u *UserResource) createUser(w http.ResponseWriter, r *http.Request, d slee
 
 func hasAuthFilter(w http.ResponseWriter, r *http.Request, d sleepy.CallData) sleepy.Error {
 	if r.Header.Get("Authorization") == "" {
-		http.Error(w, "Authorization header is missing.", http.StatusBadRequest)
 		return ErrLogin
 	}
 	d["auth"] = r.Header.Get("Authorization")
