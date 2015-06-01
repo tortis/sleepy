@@ -21,6 +21,7 @@ type UserResource struct {
 
 func (u *UserResource) Generate() *sleepy.Resource {
 	res := sleepy.NewResource("/users")
+	res.Filter(hasAuthFilter)
 	res.Route("/{uid}").
 		Method("GET").
 		To(u.getUser).
@@ -37,12 +38,19 @@ func (u *UserResource) Generate() *sleepy.Resource {
 	return res
 }
 
-func (u *UserResource) getUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "getUser!")
+func (u *UserResource) getUser(w http.ResponseWriter, r *http.Request, d sleepy.CallData) (interface{}, sleepy.Error) {
+	return fmt.Sprintf("getUser! - %s", d["auth"].(string)), nil
 }
 
-func (u *UserResource) createUser(w http.ResponseWriter, r *http.Request) {
-	//newUser := req.Data.(User)
+func (u *UserResource) createUser(w http.ResponseWriter, r *http.Request, d sleepy.CallData) (interface{}, sleepy.Error) {
+	return "Create User!", nil
+}
 
-	fmt.Fprintf(w, "createUser!")
+func hasAuthFilter(w http.ResponseWriter, r *http.Request, d sleepy.CallData) sleepy.Error {
+	if r.Header.Get("Authorization") == "" {
+		http.Error(w, "Authorization header is missing.", http.StatusBadRequest)
+		return ErrLogin
+	}
+	d["auth"] = r.Header.Get("Authorization")
+	return nil
 }
