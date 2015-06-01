@@ -1,28 +1,33 @@
 package sleepy
 
-type Error int
+type Error interface {
+	Error() string
+	StatusCode() int
+	Message() string
+}
 
-const (
-	begin_Internal = iota
-	ERR_INTERNAL
-	ERR_DATABASE
-	ERR_UNKNOWN
-	end_Internal
+type sleepyInternalError struct {
+	code    int
+	err     error
+	message string
+}
 
-	begin_Authentication
-	ERR_INVALID_CREDS
-	ERR_EXPIRED_TOKEN
-	ERR_INVALID_TOKEN
-	end_Authentication
+func (sie *sleepyInternalError) Error() string {
+	return sie.Error()
+}
 
-	begin_Request
+func (sie *sleepyInternalError) StatusCode() int {
+	return sie.code
+}
 
-	end_Request
-)
+func (sie *sleepyInternalError) Message() string {
+	return sie.message
+}
 
-func (e Error) isInternal() bool {
-	if e > begin_Internal && e < end_Internal {
-		return true
+func newInternalError(err error) Error {
+	return &sleepyInternalError{
+		code:    500,
+		err:     err,
+		message: "Server Error",
 	}
-	return false
 }

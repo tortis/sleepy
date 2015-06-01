@@ -1,7 +1,6 @@
 package sleepy
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/tortis/sleepy/mux"
@@ -19,28 +18,34 @@ func NewResource(path string) *Resource {
 	return &Resource{path: path, router: mux.NewRouter()}
 }
 
+// Start call builder
 func (r *Resource) Route(path string) *Call {
 	c := &Call{path: path, operationName: path, filters: make([]Filter, 0)}
 	r.calls = append(r.calls, c)
 	return c
 }
 
+func (r *Resource) Filter(f Filter) {
+	r.filters = append(r.filters, f)
+}
+
 // ServeHTTP of a resource is used by any path with the Resource.path prefix.
 // This handler will apply any set filters and then use a subrouter to determine
 // which call handler should be used.
 // The construct() method should be called prior to serving any requests.
-func (res *Resource) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (res *Resource) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]interface{}) {
 	// Call all filters
 	for _, filter := range res.filters {
-		err := filter(w, r)
+		err := filter(w, r, d)
 		if err != nil {
-			log.Println("Resource Filter Error: ", err)
-			// Fail here and stop handling the request
+			http.Error(w, err.Message(), err.StatusCode())
+			logResult(r, err)
+			return
 		}
 	}
 
 	// Route to the appropriate call handler
-	res.router.ServeHTTP(w, r)
+	res.router.ServeHTTP(w, r, d)
 }
 
 // Give the resource a subrouter for its base path so that it can attach its

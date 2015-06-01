@@ -1,7 +1,8 @@
 package sleepy
 
 import (
-	"log"
+	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -15,7 +16,7 @@ type Call struct {
 }
 
 // Implement the Handler interface.
-func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]interface{}) {
 	// Create a sleepy request + response
 
 	// Check headers (make sure method mathes the call method)
@@ -27,16 +28,39 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Call filters
 	for _, filter := range c.filters {
-		err := filter(w, r)
+		err := filter(w, r, d)
 		if err != nil {
-			log.Println("Call Filter Error: ", err)
-			// Fail here and stop handling the request
+			http.Error(w, err.Message(), err.StatusCode())
+			logResult(r, err)
+			return
 		}
 	}
 
 	// Call handler
-	c.handler(w, r)
-	// End of the line (request has been fully handled)
+	result, apiErr := c.handler(w, r, d)
+	if apiErr != nil {
+		http.Error(w, apiErr.Message(), apiErr.StatusCode())
+		logResult(r, apiErr)
+		return
+	}
+
+	if result == nil {
+		apiErr = newInternalError(errors.New("Call handler for " + c.operationName + " did not return a response or an error."))
+		http.Error(w, apiErr.Message(), apiErr.StatusCode())
+		logResult(r, apiErr)
+		return
+	}
+
+	jb, err := json.Marshal(result)
+	if err != nil {
+		apiErr = newInternalError(errors.New("Response from call handler for " + c.operationName + " could not be parsed to JSON."))
+		http.Error(w, apiErr.Message(), apiErr.StatusCode())
+		logResult(r, apiErr)
+		return
+	}
+	w.Header().Set("Content-Type", "Application/JSON")
+	w.Write(jb)
+	logResult(r, nil)
 }
 
 type callDataModel struct {
@@ -62,6 +86,12 @@ func (c *Call) Method(method string) *Call {
 // Call builder method
 func (c *Call) To(fn Handler) *Call {
 	c.handler = fn
+	return c
+}
+
+// Call builder method
+func (c *Call) Filter(f Filter) *Call {
+	c.filters = append(c.filters, f)
 	return c
 }
 
