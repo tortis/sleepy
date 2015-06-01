@@ -3,7 +3,7 @@ package sleepy
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/tortis/sleepy/mux"
 )
 
 type API struct {

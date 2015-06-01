@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/tortis/sleepy/mux"
 )
 
 type Resource struct {
