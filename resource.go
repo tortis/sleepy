@@ -51,7 +51,7 @@ func (res *Resource) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[str
 		err := filter(w, r, d)
 		if err != nil {
 			http.Error(w, err.Message(), err.StatusCode())
-			logResult(r, err)
+			endCall(w, r, err)
 			return
 		}
 	}

@@ -78,7 +78,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err := filter(w, r, data)
 		if err != nil {
 			http.Error(w, err.Message(), err.StatusCode())
-			logResult(r, err)
+			endCall(w, r, err)
 			return
 		}
 	}
@@ -87,10 +87,11 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // Should always be called before response handling ends
-func logResult(r *http.Request, e Error) {
+func endCall(w http.ResponseWriter, r *http.Request, e Error) {
 	if e == nil {
 		fmt.Printf("[200]  [client %s]->[%s %s]  OK\n", r.RemoteAddr, r.Method, r.URL)
 	} else {
+		http.Error(w, e.Message(), e.StatusCode())
 		fmt.Printf("[%d]  [client %s]->[%s %s] %s: %s\n", e.StatusCode(), r.RemoteAddr, r.Method, r.URL, e.Message(), e.Error())
 	}
 }
