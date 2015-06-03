@@ -6,6 +6,32 @@ type Error interface {
 	Message() string
 }
 
+type sleepyRequestError struct {
+	code    int
+	err     error
+	message string
+}
+
+func (sre *sleepyRequestError) Error() string {
+	return sre.err.Error()
+}
+
+func (sre *sleepyRequestError) StatusCode() int {
+	return sre.code
+}
+
+func (sre *sleepyRequestError) Message() string {
+	return sre.message
+}
+
+func newRequestError(msg string, err error) Error {
+	return &sleepyInternalError{
+		code:    400,
+		err:     err,
+		message: msg,
+	}
+}
+
 type sleepyInternalError struct {
 	code    int
 	err     error
@@ -13,7 +39,7 @@ type sleepyInternalError struct {
 }
 
 func (sie *sleepyInternalError) Error() string {
-	return sie.Error()
+	return sie.err.Error()
 }
 
 func (sie *sleepyInternalError) StatusCode() int {

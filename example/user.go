@@ -7,6 +7,7 @@ import (
 	"github.com/tortis/sleepy"
 )
 
+// Sleepy attributes: readonly writeonly required hidden
 type User struct {
 	Id        string `bson:"_id" sleepy:"readonly"`
 	FirstName string `sleepy:"required"`
