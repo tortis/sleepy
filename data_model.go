@@ -75,7 +75,7 @@ func (model *callDataModel) validateTagsIn(payload interface{}) Error {
 
 	// Ensure read only fields are not present
 	for _, roField := range model.roFields {
-		if isZero(pValue.FieldByIndex(roField).Interface()) {
+		if !isZero(pValue.FieldByIndex(roField).Interface()) {
 			return newRequestError("Attempting to set read-only field: "+mType.FieldByIndex(roField).Name+".", errors.New("Failed while validating tags for the payload."))
 		}
 	}
