@@ -1,7 +1,6 @@
 package sleepy
 
 import (
-	"log"
 	"reflect"
 	"strings"
 )
@@ -104,7 +103,7 @@ func (cdm *callDataModel) identifyFieldTagsIn(pos []int) {
 	}
 	// assert that kind at pos is struct
 	if curType.Kind() != reflect.Struct {
-		log.Fatal("The kind at pos is not a struct")
+		log.Critical("The kind at pos is not a struct")
 	}
 	for curPos := 0; curPos < curType.NumField(); curPos++ {
 		tags := strings.Split(curType.Field(curPos).Tag.Get("sleepy"), ",")
@@ -138,7 +137,7 @@ func (cdm *callDataModel) identifyFieldTagsOut(pos []int) {
 	}
 	// assert that kind at pos is struct
 	if curType.Kind() != reflect.Struct {
-		log.Fatal("The kind at pos is not a struct")
+		log.Critical("The kind at pos is not a struct")
 	}
 	for curPos := 0; curPos < curType.NumField(); curPos++ {
 		tags := strings.Split(curType.Field(curPos).Tag.Get("sleepy"), ",")

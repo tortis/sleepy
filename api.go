@@ -2,11 +2,17 @@ package sleepy
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/op/go-logging"
 	"github.com/tortis/sleepy/mux"
+)
+
+var log = logging.MustGetLogger("example")
+var format = logging.MustStringFormatter(
+	"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}",
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,6 +53,13 @@ func New(basePath string) *API {
 		basePath:  basePath,
 	}
 	api.resourceRouter = api.router.PathPrefix(basePath).Subrouter()
+
+	backend1 := logging.NewLogBackend(os.Stderr, "", 0)
+	backend2 := logging.NewLogBackend(os.Stderr, "", 0)
+	backend2Formatter := logging.NewBackendFormatter(backend2, format)
+	backend1Leveled := logging.AddModuleLevel(backend1)
+	backend1Leveled.SetLevel(logging.ERROR, "")
+	logging.SetBackend(backend1Leveled, backend2Formatter)
 	return api
 }
 
@@ -101,7 +114,7 @@ func endCall(w http.ResponseWriter, r *http.Request, e *Error, d CallData) {
 	startTime := d["_start"].(time.Time)
 	duration := time.Since(startTime) / 1000
 	if e == nil {
-		fmt.Printf("[200] [client %s]->[%s %s] [%d us] OK\n", r.RemoteAddr, r.Method, r.URL, duration)
+		log.Notice("[200] [client %s]->[%s %s] [%d us] OK\n", r.RemoteAddr, r.Method, r.URL, duration)
 	} else {
 		w.Header().Set("Content-Type", "Application/JSON")
 		w.WriteHeader(e.HttpCode)
@@ -109,8 +122,13 @@ func endCall(w http.ResponseWriter, r *http.Request, e *Error, d CallData) {
 		jb, err := json.Marshal(e)
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)
+			log.Critical("%s", err.Error())
 		}
 		w.Write(jb)
-		fmt.Printf("[%d] [client %s]->[%s %s] [%d us] %s: %s\n", e.HttpCode, r.RemoteAddr, r.Method, r.URL, duration, e.Msg, e.Err)
+		if e.HttpCode >= 500 {
+			log.Error("[%d] [client %s]->[%s %s] [%d us] %s: %s\n", e.HttpCode, r.RemoteAddr, r.Method, r.URL, duration, e.Msg, e.Err)
+		} else {
+			log.Warning("[%d] [client %s]->[%s %s] [%d us] %s: %s\n", e.HttpCode, r.RemoteAddr, r.Method, r.URL, duration, e.Msg, e.Err)
+		}
 	}
 }

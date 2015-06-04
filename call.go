@@ -2,7 +2,6 @@ package sleepy
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"reflect"
 )
@@ -94,7 +93,7 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 ////////////////////////////////////////////////////////////////////////////////
 func (c *Call) Method(method string) *Call {
 	if c.model.bodyIn.model != nil {
-		log.Fatal("Cannot set method of call to GET since Reads() was set. GET calls do not have a body.")
+		log.Critical("Cannot set method of call to GET since Reads() was set. GET calls do not have a body.")
 	}
 	c.method = method
 	return c
@@ -134,12 +133,12 @@ func (c *Call) PathParam(name, desc string) *Call {
 func (c *Call) Reads(m interface{}) *Call {
 	// No body allowed in a GET call
 	if c.method == "GET" {
-		log.Fatal("A GET call can not use Reads() because the GET method does not have a request body.")
+		log.Critical("A GET call can not use Reads() because the GET method does not have a request body.")
 	}
 
 	// Confirm the model is a struct
 	if reflect.TypeOf(m).Kind() != reflect.Struct {
-		log.Fatal("The model given to Reads() must be of kind 'Struct'")
+		log.Critical("The model given to Reads() must be of kind 'Struct'")
 	}
 
 	c.model.bodyIn.model = m
