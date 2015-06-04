@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/tortis/sleepy/mux"
 )
@@ -74,11 +75,14 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create data space
 	data := make(map[string]interface{})
 
+	// Time the application level call handling
+	data["_start"] = time.Now()
+
 	// Run API level filters
 	for _, filter := range api.filters {
 		err := filter(w, r, data)
 		if err != nil {
-			endCall(w, r, err)
+			endCall(w, r, err, data)
 			return
 		}
 	}
@@ -86,10 +90,18 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r, data)
 }
 
-// Should always be called before response handling ends
-func endCall(w http.ResponseWriter, r *http.Request, e *Error) {
+////////////////////////////////////////////////////////////////////////////////
+// Function that should be called at the very end of every single request.    //
+// It is responsible for logging the request and result. If the error is nil, //
+// the request will be logged as having been handled successfully.            //
+// If the error is not nil, then it will be logged AND this function will     //
+// write the appropriate error details to the client.                         //
+////////////////////////////////////////////////////////////////////////////////
+func endCall(w http.ResponseWriter, r *http.Request, e *Error, d CallData) {
+	startTime := d["_start"].(time.Time)
+	duration := time.Since(startTime) / 1000
 	if e == nil {
-		fmt.Printf("[200]  [client %s]->[%s %s]  OK\n", r.RemoteAddr, r.Method, r.URL)
+		fmt.Printf("[200] [client %s]->[%s %s] [%d us] OK\n", r.RemoteAddr, r.Method, r.URL, duration)
 	} else {
 		w.Header().Set("Content-Type", "Application/JSON")
 		w.WriteHeader(e.HttpCode)
@@ -99,6 +111,6 @@ func endCall(w http.ResponseWriter, r *http.Request, e *Error) {
 			http.Error(w, "", http.StatusInternalServerError)
 		}
 		w.Write(jb)
-		fmt.Printf("[%d]  [client %s]->[%s %s] %s: %s\n", e.HttpCode, r.RemoteAddr, r.Method, r.URL, e.Msg, e.Err)
+		fmt.Printf("[%d] [client %s]->[%s %s] [%d us] %s: %s\n", e.HttpCode, r.RemoteAddr, r.Method, r.URL, duration, e.Msg, e.Err)
 	}
 }

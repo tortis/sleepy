@@ -50,7 +50,7 @@ func (res *Resource) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[str
 	for _, filter := range res.filters {
 		err := filter(w, r, d)
 		if err != nil {
-			endCall(w, r, err)
+			endCall(w, r, err, d)
 			return
 		}
 	}

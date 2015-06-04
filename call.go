@@ -21,18 +21,18 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 	// Parse url/path variables and store them in the *sleepy.Request
 
 	//Parse the request body into the reads model if applicable
-	if c.model.bodyIn != nil && r.Method != "GET" {
+	if c.model.bodyIn.model != nil && r.Method != "GET" {
 		dec := json.NewDecoder(r.Body)
-		payload := reflect.New(reflect.TypeOf(c.model.bodyIn)).Interface()
+		payload := reflect.New(reflect.TypeOf(c.model.bodyIn.model)).Interface()
 		err := dec.Decode(payload)
 		if err != nil {
 			apiErr := ErrBadRequest(err.Error(), "Could not parse the request.", ERR_PARSE_REQUEST)
-			endCall(w, r, apiErr)
+			endCall(w, r, apiErr, d)
 			return
 		}
 		apiErr := c.model.validateTagsIn(payload)
 		if apiErr != nil {
-			endCall(w, r, apiErr)
+			endCall(w, r, apiErr, d)
 			return
 		}
 		d["body"] = payload
@@ -44,7 +44,7 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 	for _, filter := range c.filters {
 		err := filter(w, r, d)
 		if err != nil {
-			endCall(w, r, err)
+			endCall(w, r, err, d)
 			return
 		}
 	}
@@ -52,34 +52,48 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 	// Call handler
 	result, apiErr := c.handler(w, r, d)
 	if apiErr != nil {
-		endCall(w, r, apiErr)
+		endCall(w, r, apiErr, d)
 		return
 	}
 
 	if result == nil {
 		apiErr = ErrInternal("Call handler for " + c.operationName + " did not return a response or an error.")
-		endCall(w, r, apiErr)
+		endCall(w, r, apiErr, d)
 		return
 	}
 
-	//TODO: Clean Write Only json values
+	// Remove any fields that are write only
+	// Get the value of the result
+	rawVal := reflect.ValueOf(result)
+	var val reflect.Value
+	if rawVal.Kind() == reflect.Ptr {
+		val = rawVal.Elem()
+	} else {
+		val = rawVal
+	}
+	// Then zero each field in the result that is marked as writeonly
+	for _, fieldIndex := range c.model.bodyOut.woFields {
+		field := val.FieldByIndex(fieldIndex)
+		field.Set(reflect.Zero(field.Type()))
+	}
 
+	// Marshal the result into json and write the response
 	jb, err := json.Marshal(result)
 	if err != nil {
 		apiErr = ErrInternal("Response from call handler for " + c.operationName + " could not be parsed to JSON.")
-		endCall(w, r, apiErr)
+		endCall(w, r, apiErr, d)
 		return
 	}
 	w.Header().Set("Content-Type", "Application/JSON")
 	w.Write(jb)
-	endCall(w, r, nil)
+	endCall(w, r, nil, d)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 ////////////////////////////////////////////////////////////////////////////////
 func (c *Call) Method(method string) *Call {
-	if c.model.bodyIn != nil {
+	if c.model.bodyIn.model != nil {
 		log.Fatal("Cannot set method of call to GET since Reads() was set. GET calls do not have a body.")
 	}
 	c.method = method
@@ -128,8 +142,8 @@ func (c *Call) Reads(m interface{}) *Call {
 		log.Fatal("The model given to Reads() must be of kind 'Struct'")
 	}
 
-	c.model.bodyIn = m
-	c.model.identifyFieldTags(nil)
+	c.model.bodyIn.model = m
+	c.model.identifyFieldTagsIn(nil)
 	return c
 }
 
@@ -137,7 +151,8 @@ func (c *Call) Reads(m interface{}) *Call {
 //
 ////////////////////////////////////////////////////////////////////////////////
 func (c *Call) Returns(m interface{}) *Call {
-	c.model.bodyOut = m
+	c.model.bodyOut.model = m
+	c.model.identifyFieldTagsOut(nil)
 	return c
 }
 
