@@ -2,7 +2,6 @@ package sleepy
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"reflect"
@@ -27,7 +26,7 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 		payload := reflect.New(reflect.TypeOf(c.model.bodyIn)).Interface()
 		err := dec.Decode(payload)
 		if err != nil {
-			apiErr := newRequestError("Could not parse the request", err)
+			apiErr := ErrBadRequest(err.Error(), "Could not parse the request.", ERR_PARSE_REQUEST)
 			endCall(w, r, apiErr)
 			return
 		}
@@ -58,14 +57,16 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 	}
 
 	if result == nil {
-		apiErr = newInternalError(errors.New("Call handler for " + c.operationName + " did not return a response or an error."))
+		apiErr = ErrInternal("Call handler for " + c.operationName + " did not return a response or an error.")
 		endCall(w, r, apiErr)
 		return
 	}
 
+	//TODO: Clean Write Only json values
+
 	jb, err := json.Marshal(result)
 	if err != nil {
-		apiErr = newInternalError(errors.New("Response from call handler for " + c.operationName + " could not be parsed to JSON."))
+		apiErr = ErrInternal("Response from call handler for " + c.operationName + " could not be parsed to JSON.")
 		endCall(w, r, apiErr)
 		return
 	}

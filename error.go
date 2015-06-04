@@ -1,59 +1,23 @@
 package sleepy
 
-type Error interface {
-	Error() string
-	StatusCode() int
-	Message() string
+type Error struct {
+	HttpCode int    `json:"-"`
+	Err      string `json:"error"`
+	Msg      string `json:"message"`
+	Code     int    `json:"code"`
 }
 
-type sleepyRequestError struct {
-	code    int
-	err     error
-	message string
+func ErrInternal(err string) *Error {
+	return &Error{500, err, "", ERR_INTERNAL}
 }
 
-func (sre *sleepyRequestError) Error() string {
-	return sre.err.Error()
+func ErrBadRequest(err string, msg string, code int) *Error {
+	return &Error{422, err, msg, code}
 }
 
-func (sre *sleepyRequestError) StatusCode() int {
-	return sre.code
-}
-
-func (sre *sleepyRequestError) Message() string {
-	return sre.message
-}
-
-func newRequestError(msg string, err error) Error {
-	return &sleepyInternalError{
-		code:    400,
-		err:     err,
-		message: msg,
-	}
-}
-
-type sleepyInternalError struct {
-	code    int
-	err     error
-	message string
-}
-
-func (sie *sleepyInternalError) Error() string {
-	return sie.err.Error()
-}
-
-func (sie *sleepyInternalError) StatusCode() int {
-	return sie.code
-}
-
-func (sie *sleepyInternalError) Message() string {
-	return sie.message
-}
-
-func newInternalError(err error) Error {
-	return &sleepyInternalError{
-		code:    500,
-		err:     err,
-		message: "Server Error",
-	}
-}
+const (
+	ERR_INTERNAL = 1000 + iota
+	ERR_PARSE_REQUEST
+	ERR_FIELD_MISSING
+	ERR_MOD_RO_FIELD
+)

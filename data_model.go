@@ -1,7 +1,6 @@
 package sleepy
 
 import (
-	"errors"
 	"log"
 	"reflect"
 	"strings"
@@ -62,21 +61,21 @@ func (model *callDataModel) identifyFieldTags(pos []int) {
 ////////////////////////////////////////////////////////////////////////////////
 //
 ////////////////////////////////////////////////////////////////////////////////
-func (model *callDataModel) validateTagsIn(payload interface{}) Error {
+func (model *callDataModel) validateTagsIn(payload interface{}) *Error {
 	pValue := reflect.ValueOf(payload).Elem()
 	mType := reflect.TypeOf(model.bodyIn)
 	// Ensure required fields are not zeros
 	// TODO add an exception for bool since default value is false.
 	for _, reqField := range model.requiredFields {
 		if isZero(pValue.FieldByIndex(reqField).Interface()) {
-			return newRequestError("Required field: "+mType.FieldByIndex(reqField).Name+" is missing.", errors.New("Failed while validating tags for the payload."))
+			return ErrBadRequest("Failed while validating tags for the payload.", "Required field: "+mType.FieldByIndex(reqField).Name+" is missing.", ERR_FIELD_MISSING)
 		}
 	}
 
 	// Ensure read only fields are not present
 	for _, roField := range model.roFields {
 		if !isZero(pValue.FieldByIndex(roField).Interface()) {
-			return newRequestError("Attempting to set read-only field: "+mType.FieldByIndex(roField).Name+".", errors.New("Failed while validating tags for the payload."))
+			return ErrBadRequest("Failed while validating tags for the payload.", "Attempting to set read-only field: "+mType.FieldByIndex(roField).Name+".", ERR_MOD_RO_FIELD)
 		}
 	}
 	return nil

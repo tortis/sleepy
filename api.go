@@ -1,6 +1,7 @@
 package sleepy
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // A handler function that can service an API call.                           //
 ////////////////////////////////////////////////////////////////////////////////
-type Handler func(http.ResponseWriter, *http.Request, CallData) (interface{}, Error)
+type Handler func(http.ResponseWriter, *http.Request, CallData) (interface{}, *Error)
 
 ////////////////////////////////////////////////////////////////////////////////
 // A middleware handler that can do work before the API call handler. Filters //
@@ -18,7 +19,7 @@ type Handler func(http.ResponseWriter, *http.Request, CallData) (interface{}, Er
 // Filter's should not write any data to the ResponseWriter, instead they     //
 // should write data to CallData and return an Error if appropriate.          //
 ////////////////////////////////////////////////////////////////////////////////
-type Filter func(http.ResponseWriter, *http.Request, CallData) Error
+type Filter func(http.ResponseWriter, *http.Request, CallData) *Error
 
 ////////////////////////////////////////////////////////////////////////////////
 // A place to store arbitary data while the request is bounding between       //
@@ -77,7 +78,6 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, filter := range api.filters {
 		err := filter(w, r, data)
 		if err != nil {
-			http.Error(w, err.Message(), err.StatusCode())
 			endCall(w, r, err)
 			return
 		}
@@ -87,11 +87,18 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // Should always be called before response handling ends
-func endCall(w http.ResponseWriter, r *http.Request, e Error) {
+func endCall(w http.ResponseWriter, r *http.Request, e *Error) {
 	if e == nil {
 		fmt.Printf("[200]  [client %s]->[%s %s]  OK\n", r.RemoteAddr, r.Method, r.URL)
 	} else {
-		http.Error(w, e.Message(), e.StatusCode())
-		fmt.Printf("[%d]  [client %s]->[%s %s] %s: %s\n", e.StatusCode(), r.RemoteAddr, r.Method, r.URL, e.Message(), e.Error())
+		w.Header().Set("Content-Type", "Application/JSON")
+		w.WriteHeader(e.HttpCode)
+		// Marshal the error into JSON
+		jb, err := json.Marshal(e)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+		}
+		w.Write(jb)
+		fmt.Printf("[%d]  [client %s]->[%s %s] %s: %s\n", e.HttpCode, r.RemoteAddr, r.Method, r.URL, e.Msg, e.Err)
 	}
 }
