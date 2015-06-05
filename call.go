@@ -68,17 +68,19 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 
 	// Remove any fields that are write only
 	// Get the value of the result
-	rawVal := reflect.ValueOf(result)
-	var val reflect.Value
-	if rawVal.Kind() == reflect.Ptr {
-		val = rawVal.Elem()
-	} else {
-		val = rawVal
-	}
-	// Then zero each field in the result that is marked as writeonly
-	for _, fieldIndex := range c.model.bodyOut.woFields {
-		field := val.FieldByIndex(fieldIndex)
-		field.Set(reflect.Zero(field.Type()))
+	if c.model.bodyOut.model != nil {
+		rawVal := reflect.ValueOf(result)
+		var val reflect.Value
+		if rawVal.Kind() == reflect.Ptr {
+			val = rawVal.Elem()
+		} else {
+			val = rawVal
+		}
+		// Then zero each field in the result that is marked as writeonly
+		for _, fieldIndex := range c.model.bodyOut.woFields {
+			field := val.FieldByIndex(fieldIndex)
+			field.Set(reflect.Zero(field.Type()))
+		}
 	}
 
 	// Marshal the result into json and write the response
