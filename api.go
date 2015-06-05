@@ -26,7 +26,7 @@ type Handler func(http.ResponseWriter, *http.Request, CallData) (interface{}, *E
 // Filter's should not write any data to the ResponseWriter, instead they     //
 // should write data to CallData and return an Error if appropriate.          //
 ////////////////////////////////////////////////////////////////////////////////
-type Filter func(http.ResponseWriter, *http.Request, CallData) *Error
+type Filter func(*http.Request, CallData) *Error
 
 ////////////////////////////////////////////////////////////////////////////////
 // A place to store arbitary data while the request is bounding between       //
@@ -93,7 +93,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Run API level filters
 	for _, filter := range api.filters {
-		err := filter(w, r, data)
+		err := filter(r, data)
 		if err != nil {
 			endCall(w, r, err, data)
 			return

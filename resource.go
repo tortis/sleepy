@@ -48,7 +48,7 @@ func (r *Resource) Filter(f Filter) {
 func (res *Resource) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]interface{}) {
 	// Call all filters
 	for _, filter := range res.filters {
-		err := filter(w, r, d)
+		err := filter(r, d)
 		if err != nil {
 			endCall(w, r, err, d)
 			return

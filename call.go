@@ -46,7 +46,7 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 
 	// Call filters
 	for _, filter := range c.filters {
-		err := filter(w, r, d)
+		err := filter(r, d)
 		if err != nil {
 			endCall(w, r, err, d)
 			return
