@@ -19,6 +19,13 @@ type Call struct {
 func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]interface{}) {
 	// Parse url/path variables and store them in the *sleepy.Request
 
+	// Validate that required queryVars are present
+	apiErr := c.model.validateQueryVars(r, d)
+	if apiErr != nil {
+		endCall(w, r, apiErr, d)
+		return
+	}
+
 	//Parse the request body into the reads model if applicable
 	if c.model.bodyIn.model != nil && r.Method != "GET" {
 		dec := json.NewDecoder(r.Body)
@@ -36,8 +43,6 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 		}
 		d["body"] = payload
 	}
-
-	// and validate that required fields are present
 
 	// Call filters
 	for _, filter := range c.filters {
@@ -119,11 +124,25 @@ func (c *Call) Filter(f Filter) *Call {
 //
 ////////////////////////////////////////////////////////////////////////////////
 func (c *Call) PathParam(name, desc string) *Call {
-	c.model.pathVarsDoc = append(c.model.pathVarsDoc, inputVar{
+	c.model.pathVars = append(c.model.pathVars, inputVar{
 		typ:      "string",
 		name:     name,
 		desc:     desc,
-		required: true})
+		required: true,
+	})
+	return c
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////
+func (c *Call) QueryVar(name, description string, required bool) *Call {
+	c.model.queryVars = append(c.model.queryVars, inputVar{
+		typ:      "string",
+		name:     name,
+		desc:     description,
+		required: required,
+	})
 	return c
 }
 

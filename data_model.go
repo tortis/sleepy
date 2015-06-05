@@ -1,6 +1,7 @@
 package sleepy
 
 import (
+	"net/http"
 	"reflect"
 	"strings"
 )
@@ -41,10 +42,10 @@ const (
 // callDataModel is build when the user makes Call builder method calls.      //
 ////////////////////////////////////////////////////////////////////////////////
 type callDataModel struct {
-	bodyIn       modelIn
-	bodyOut      modelOut
-	pathVarsDoc  []inputVar
-	queryVarsDoc []inputVar
+	bodyIn    modelIn
+	bodyOut   modelOut
+	pathVars  []inputVar
+	queryVars []inputVar
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -153,6 +154,16 @@ func (cdm *callDataModel) identifyFieldTagsOut(pos []int) {
 			cdm.identifyFieldTagsOut(append(pos, curPos))
 		}
 	}
+}
+
+func (cdm *callDataModel) validateQueryVars(r *http.Request, d CallData) *Error {
+	for _, queryVar := range cdm.queryVars {
+		// Check if required vars are missing
+		if queryVar.required && r.FormValue(queryVar.name) == "" {
+			return ErrBadRequest("Failed while validating query variables.", "Required query variable '"+queryVar.name+"' is missing.", ERR_FIELD_MISSING)
+		}
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
