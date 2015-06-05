@@ -20,6 +20,10 @@ type Error struct {
 	Code     int    `json:"code"`
 }
 
+func (this *Error) Error() string {
+	return this.Err
+}
+
 func ErrInternal(err string) *Error {
 	return &Error{500, err, "", ERR_INTERNAL}
 }
