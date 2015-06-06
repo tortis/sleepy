@@ -60,6 +60,8 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 		return
 	}
 
+	// Recover here
+
 	if result == nil {
 		apiErr = ErrInternal("Call handler for " + c.operationName + " did not return a response or an error.")
 		endCall(w, r, apiErr, d)

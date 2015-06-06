@@ -138,7 +138,8 @@ func (cdm *callDataModel) identifyFieldTagsOut(pos []int) {
 	}
 	// assert that kind at pos is struct
 	if curType.Kind() != reflect.Struct {
-		log.Critical("The kind at pos is not a struct")
+		log.Info("The kind at pos is not a struct")
+		return
 	}
 	for curPos := 0; curPos < curType.NumField(); curPos++ {
 		tags := strings.Split(curType.Field(curPos).Tag.Get("sleepy"), ",")
@@ -197,5 +198,14 @@ func (cdm *callDataModel) validateTagsIn(payload interface{}) *Error {
 // type's zero value.                                                         //
 ////////////////////////////////////////////////////////////////////////////////
 func isZero(x interface{}) bool {
-	return x == reflect.Zero(reflect.TypeOf(x)).Interface()
+	if reflect.TypeOf(x).Kind() == reflect.Slice {
+		log.Info("The object is a slice.")
+		if reflect.ValueOf(x).Len() == 0 {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return x == reflect.Zero(reflect.TypeOf(x)).Interface()
+	}
 }
