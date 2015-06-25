@@ -40,17 +40,19 @@ type API struct {
 	router         *mux.Router
 	resourceRouter *mux.Router
 	filters        []Filter
+	enableCORS     bool
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Create a new API that will handle HTTP requests on the base path. Use the  //
 // Register method to add resources to the API.                               //
 ////////////////////////////////////////////////////////////////////////////////
-func New(basePath string) *API {
+func New(basePath string, enableCORS bool) *API {
 	api := &API{
-		resources: make([]*Resource, 0),
-		router:    mux.NewRouter(),
-		basePath:  basePath,
+		resources:  make([]*Resource, 0),
+		router:     mux.NewRouter(),
+		basePath:   basePath,
+		enableCORS: enableCORS,
 	}
 	api.resourceRouter = api.router.PathPrefix(basePath).Subrouter()
 
@@ -90,6 +92,19 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Time the application level call handling
 	data["_start"] = time.Now()
+
+	// Check for OPTIONS methods to handle CORS
+	if api.enableCORS {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			endCall(w, r, nil, data)
+			return
+		}
+	}
 
 	// Run API level filters
 	for _, filter := range api.filters {
