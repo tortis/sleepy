@@ -96,7 +96,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check for OPTIONS methods to handle CORS
 	if api.enableCORS {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		if r.Method == "OPTIONS" {
