@@ -36,7 +36,7 @@ func (c *Call) ServeHTTP(w http.ResponseWriter, r *http.Request, d map[string]in
 			endCall(w, r, apiErr, d)
 			return
 		}
-		apiErr := c.model.validateTagsIn(payload)
+		apiErr := c.model.validateTagsIn(payload, r.Method == "POST")
 		if apiErr != nil {
 			endCall(w, r, apiErr, d)
 			return

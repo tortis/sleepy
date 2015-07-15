@@ -173,14 +173,16 @@ func (cdm *callDataModel) validateQueryVars(r *http.Request, d CallData) *Error 
 // fields. Ensure that required fields are not zero values, ensure that       //
 // readonly fields ARE zero values.                                           //
 ////////////////////////////////////////////////////////////////////////////////
-func (cdm *callDataModel) validateTagsIn(payload interface{}) *Error {
+func (cdm *callDataModel) validateTagsIn(payload interface{}, require bool) *Error {
 	pValue := reflect.ValueOf(payload).Elem()
 	mType := reflect.TypeOf(cdm.bodyIn.model)
 	// Ensure required fields are not zeros
 	// TODO add an exception for bool since default value is false.
-	for _, reqField := range cdm.bodyIn.requiredFields {
-		if isZero(pValue.FieldByIndex(reqField).Interface()) {
-			return ErrBadRequest("Failed while validating tags for the payload.", "Required field: "+mType.FieldByIndex(reqField).Name+" is missing.", ERR_FIELD_MISSING)
+	if require {
+		for _, reqField := range cdm.bodyIn.requiredFields {
+			if isZero(pValue.FieldByIndex(reqField).Interface()) {
+				return ErrBadRequest("Failed while validating tags for the payload.", "Required field: "+mType.FieldByIndex(reqField).Name+" is missing.", ERR_FIELD_MISSING)
+			}
 		}
 	}
 
